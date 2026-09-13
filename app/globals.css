@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-manrope), ui-sans-serif, sans-serif;
+
+  /* Encre / fond noir */
+  --color-ink-950: #000000;
+  --color-ink-900: #05070c;
+  --color-ink-850: #080b12;
+  --color-ink-800: #0c1019;
+  --color-ink-700: #141926;
+  --color-ink-600: #1e2534;
+
+  /* Accent bleu fluo */
+  --color-fluo-50: #e6fbff;
+  --color-fluo-100: #c4f5ff;
+  --color-fluo-200: #8deaff;
+  --color-fluo-300: #4fdcff;
+  --color-fluo-400: #22ccff;
+  --color-fluo-500: #00b4ff;
+  --color-fluo-600: #0094e6;
+  --color-fluo-700: #0072b8;
+  --color-fluo-800: #005a92;
+
+  --color-mist: #f4f7fb;
+  --color-mist-soft: #9aa6ba;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+html, body {
+  background: var(--color-ink-950);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* Poids explicites */
+.font-300 { font-weight: 300; }
+.font-400 { font-weight: 400; }
+.font-500 { font-weight: 500; }
+.font-600 { font-weight: 600; }
+.font-700 { font-weight: 700; }
+.font-800 { font-weight: 800; }
+
+/* Mot d'accent : Bodoni italique en dégradé bleu animé */
+.accent {
+  font-family: var(--font-brand), Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 600;
+  background: linear-gradient(
+    100deg,
+    #0b4dc4 0%, #1f9dff 26%, #22ccff 42%, #aeeeff 50%,
+    #22ccff 58%, #1f9dff 74%, #0b4dc4 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: accent-shine 6s linear infinite;
+}
+@keyframes accent-shine {
+  to { background-position: -220% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .accent { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+::selection {
+  background: rgba(34, 204, 255, 0.30);
+  color: #ffffff;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+/* Cartes : coins nets, fond plein sobre */
+@utility card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+@utility glow-fluo {
+  box-shadow: 0 16px 40px -24px rgba(0, 0, 0, 0.7);
+}
+
+@utility text-gradient {
+  background: linear-gradient(120deg, #ffffff 0%, #a9edff 45%, #22ccff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Halo lumineux */
+.aura {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Fond : grille de plans discrète + battement bleu */
+.blueprint {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #000000;
+  background-image:
+    linear-gradient(rgba(34, 204, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 204, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 25%, transparent 78%);
+}
+
+/* Barre de progression animée */
+@keyframes bar-fill { from { transform: scaleX(0); } }
+
+/* Apparition douce des étapes / résultat */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
+}
+
+/* Barre de compteur (gain) qui se remplit */
+@keyframes meter {
+  from { width: 0; }
+}
