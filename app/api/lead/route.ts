@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 interface DiagnosticPayload {
+  // Version « diagnostic » (économies)
   reclaimWeeklyHours?: number;
   reclaimAnnualHours?: number;
   annualSavings?: number;
@@ -10,9 +11,14 @@ interface DiagnosticPayload {
   leadScore?: number;
   temperature?: string;
   priorities?: string[]; // noms des employés IA prioritaires
+  // Version « cerveau » (équipe + coût humain)
+  teamRoster?: string[];
+  humanCostAnnual?: number;
+  humanCostMonthly?: number;
 }
 
 interface IncomingBody {
+  interest?: string;
   name?: string;
   company?: string;
   email?: string;
@@ -21,6 +27,7 @@ interface IncomingBody {
   teamSize?: string;
   timeSinks?: string;
   departments?: string;
+  tools?: string;
   hoursPerWeek?: number;
   hourlyRate?: number;
   aiLevel?: string;
@@ -44,6 +51,7 @@ export async function POST(req: Request) {
   }
 
   const {
+    interest,
     name,
     company,
     email,
@@ -52,6 +60,7 @@ export async function POST(req: Request) {
     teamSize,
     timeSinks,
     departments,
+    tools,
     hoursPerWeek,
     hourlyRate,
     aiLevel,
@@ -72,7 +81,7 @@ export async function POST(req: Request) {
   // Payload aplati pour mapping CRM direct + données brutes en complément.
   const payload = {
     source: "diagnostic-lecloud",
-    interest: "diagnostic-ia",
+    interest: interest ?? "diagnostic-ia",
     receivedAt: new Date().toISOString(),
 
     // Contact
@@ -88,6 +97,7 @@ export async function POST(req: Request) {
     teamSize: teamSize ?? "",
     timeSinks: timeSinks ?? "",
     departments: departments ?? "",
+    tools: tools ?? "",
     hoursPerWeek: hoursPerWeek ?? null,
     hourlyRate: hourlyRate ?? null,
     aiLevel: aiLevel ?? "",
@@ -101,6 +111,11 @@ export async function POST(req: Request) {
     leadScore: diagnostic?.leadScore ?? null,
     temperature: diagnostic?.temperature ?? "",
     priorities: diagnostic?.priorities?.join(", ") ?? "",
+
+    // Résultat « cerveau » (équipe + coût humain équivalent)
+    teamRoster: diagnostic?.teamRoster?.join(", ") ?? "",
+    humanCostAnnual: diagnostic?.humanCostAnnual ?? null,
+    humanCostMonthly: diagnostic?.humanCostMonthly ?? null,
 
     // Données brutes
     raw: body,
