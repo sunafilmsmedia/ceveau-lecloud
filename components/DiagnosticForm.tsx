@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CALENDLY_URL } from "@/lib/site";
 import { DEPARTMENTS, DeptId, TIME_SINKS } from "@/lib/diagnostic";
 import BrainBuild from "./BrainBuild";
+import BookingWidget from "./BookingWidget";
 
 type Answers = {
   sector: string;
@@ -208,24 +208,21 @@ export default function DiagnosticForm() {
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="card p-6 text-center sm:p-10">
-          <h3 className="font-display text-2xl font-800 text-white sm:text-3xl">
-            On la construit ?
-          </h3>
-          <p className="mx-auto mt-3 max-w-lg text-mist-soft">
-            On la construit pour toi, clé en main. 15 minutes pour valider ton cerveau IA et te dire
-            par quel employé on commence. Sans engagement.
-          </p>
-          <a
-            href={CALENDLY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex rounded-full bg-fluo-500 px-8 py-4 font-display font-800 text-ink-950 transition-colors hover:bg-fluo-400 glow-fluo"
-          >
-            Réserver mon appel gratuit
-          </a>
-          <p className="mt-3 text-xs text-mist-soft/70">
+        {/* CTA + calendrier */}
+        <div className="card p-6 sm:p-8">
+          <div className="text-center">
+            <h3 className="font-display text-2xl font-800 text-white sm:text-3xl">
+              On la construit ?
+            </h3>
+            <p className="mx-auto mt-3 max-w-lg text-mist-soft">
+              On la construit pour toi, clé en main. Choisis un moment ci-dessous : 15 minutes pour
+              valider ton cerveau IA et te dire par quel employé on commence. Sans engagement.
+            </p>
+          </div>
+          <div className="mt-6">
+            <BookingWidget />
+          </div>
+          <p className="mt-3 text-center text-xs text-mist-soft/70">
             Ton équipe IA installée et testée en 7 jours, directement dans ton entreprise.
           </p>
         </div>

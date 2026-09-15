@@ -10,6 +10,13 @@ export const SITE_DESCRIPTION =
 
 export const SITE_LOCALE = "fr_CA";
 
+// Calendrier de réservation (widget LeadConnector / GoHighLevel).
+export const BOOKING_URL =
+  process.env.NEXT_PUBLIC_BOOKING_URL ||
+  "https://api.leadconnectorhq.com/widget/bookings/consultation-6606";
+
+// Identifiant de l'iframe attendu par form_embed.js (dernier segment de l'URL).
+export const BOOKING_ID = BOOKING_URL.split("/").pop() || "booking";
+
 export const CALENDLY_URL =
-  process.env.NEXT_PUBLIC_CALENDLY_URL ||
-  "https://calendly.com/sunafilmsmedia/nouvelle-reunion";
+  process.env.NEXT_PUBLIC_CALENDLY_URL || BOOKING_URL;
