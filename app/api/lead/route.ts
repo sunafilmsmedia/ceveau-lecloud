@@ -15,6 +15,9 @@ interface DiagnosticPayload {
   teamRoster?: string[];
   humanCostAnnual?: number;
   humanCostMonthly?: number;
+  // Version « workforce » (cerveau + mode de construction)
+  buildMode?: string;
+  tasksAutomated?: number;
 }
 
 interface IncomingBody {
@@ -28,6 +31,7 @@ interface IncomingBody {
   timeSinks?: string;
   departments?: string;
   tools?: string;
+  buildMode?: string;
   hoursPerWeek?: number;
   hourlyRate?: number;
   aiLevel?: string;
@@ -61,6 +65,7 @@ export async function POST(req: Request) {
     timeSinks,
     departments,
     tools,
+    buildMode,
     hoursPerWeek,
     hourlyRate,
     aiLevel,
@@ -98,6 +103,7 @@ export async function POST(req: Request) {
     timeSinks: timeSinks ?? "",
     departments: departments ?? "",
     tools: tools ?? "",
+    buildMode: buildMode ?? "",
     hoursPerWeek: hoursPerWeek ?? null,
     hourlyRate: hourlyRate ?? null,
     aiLevel: aiLevel ?? "",
@@ -116,6 +122,10 @@ export async function POST(req: Request) {
     teamRoster: diagnostic?.teamRoster?.join(", ") ?? "",
     humanCostAnnual: diagnostic?.humanCostAnnual ?? null,
     humanCostMonthly: diagnostic?.humanCostMonthly ?? null,
+
+    // Résultat « workforce » (mode de construction)
+    diagBuildMode: diagnostic?.buildMode ?? buildMode ?? "",
+    tasksAutomated: diagnostic?.tasksAutomated ?? null,
 
     // Données brutes
     raw: body,

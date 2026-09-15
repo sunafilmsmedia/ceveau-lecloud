@@ -9,6 +9,8 @@ export type DeptId = "ventes" | "csm" | "adjointe" | "cfo" | "cmo";
 export interface Department {
   id: DeptId;
   name: string;
+  /** Libellé court affiché dans les choix (ex. « IA Ventes »). */
+  short: string;
   icon: string;
   tagline: string;
   tasks: string[];
@@ -20,6 +22,7 @@ export const DEPARTMENTS: Department[] = [
   {
     id: "ventes",
     name: "Directeur des ventes IA",
+    short: "IA Ventes",
     icon: "💰",
     tagline: "Il fait avancer chaque opportunité, sans jamais l'oublier.",
     tasks: [
@@ -33,6 +36,7 @@ export const DEPARTMENTS: Department[] = [
   {
     id: "csm",
     name: "Client Success Manager IA",
+    short: "IA Service client",
     icon: "🤝",
     tagline: "Il garde tes clients heureux — et fidèles.",
     tasks: [
@@ -46,6 +50,7 @@ export const DEPARTMENTS: Department[] = [
   {
     id: "adjointe",
     name: "Adjointe de direction IA",
+    short: "IA Adjointe",
     icon: "📋",
     tagline: "Elle t'enlève tout le poids administratif des épaules.",
     tasks: [
@@ -59,6 +64,7 @@ export const DEPARTMENTS: Department[] = [
   {
     id: "cfo",
     name: "CFO IA",
+    short: "IA Finances",
     icon: "📊",
     tagline: "Il garde l'œil sur tes chiffres à ta place.",
     tasks: [
@@ -72,6 +78,7 @@ export const DEPARTMENTS: Department[] = [
   {
     id: "cmo",
     name: "CMO complet IA",
+    short: "IA Marketing",
     icon: "🎯",
     tagline: "Il alimente ta machine à leads en continu.",
     tasks: [

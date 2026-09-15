@@ -2,27 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { CALENDLY_URL } from "@/lib/site";
-import {
-  AI_LEVELS,
-  AI_TOOLS,
-  DEPARTMENTS,
-  DeptId,
-  DiagnosticInput,
-  fmtInt,
-  runDiagnostic,
-  TEAM_SIZES,
-  TIME_SINKS,
-} from "@/lib/diagnostic";
+import { DEPARTMENTS, DeptId, TIME_SINKS } from "@/lib/diagnostic";
+import BrainBuild from "./BrainBuild";
+
+type BuildMode = "par-nous" | "avec-nous";
 
 type Answers = {
   sector: string;
-  teamSize: string;
   departments: DeptId[];
   timeSinks: string[];
-  hoursPerWeek: number;
-  hourlyRate: number;
-  aiLevel: string;
-  aiTool: string;
+  buildMode: BuildMode | "";
   name: string;
   email: string;
   phone: string;
@@ -31,20 +20,42 @@ type Answers = {
 
 const empty: Answers = {
   sector: "",
-  teamSize: "",
   departments: [],
   timeSinks: [],
-  hoursPerWeek: 12,
-  hourlyRate: 35,
-  aiLevel: "",
-  aiTool: "",
+  buildMode: "",
   name: "",
   email: "",
   phone: "",
   consent: false,
 };
 
-const STEPS = 7;
+const STEPS = 5;
+
+const BUILD_MODES: {
+  id: BuildMode;
+  icon: string;
+  title: string;
+  desc: string;
+}[] = [
+  {
+    id: "par-nous",
+    icon: "🔧",
+    title: "Par vous — clé en main",
+    desc: "Vous construisez et installez toute mon équipe IA. Je n'ai qu'à l'utiliser.",
+  },
+  {
+    id: "avec-nous",
+    icon: "🤝",
+    title: "Avec vous — on apprend",
+    desc: "Vous nous formez et on la construit ensemble, pour qu'on soit autonomes ensuite.",
+  },
+];
+
+const LOADING_LINES = [
+  "Lecture de ton entreprise…",
+  "Assemblage de tes employés IA…",
+  "Connexion de tes tâches au cerveau…",
+];
 
 function Chip({
   active,
@@ -70,103 +81,40 @@ function Chip({
   );
 }
 
-function Slider({
-  label,
-  value,
-  min,
-  max,
-  step,
-  suffix,
-  hint,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  suffix: string;
-  hint?: string;
-  onChange: (v: number) => void;
-}) {
-  const pct = ((value - min) / (max - min)) * 100;
-  return (
-    <div>
-      <div className="mb-2 flex items-baseline justify-between">
-        <span className="text-sm text-mist-soft">{label}</span>
-        <span className="font-display text-lg font-700 text-white">
-          {value}
-          <span className="ml-1 text-sm font-400 text-mist-soft">{suffix}</span>
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-md outline-none
-          [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none
-          [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:bg-fluo-400
-          [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-sm
-          [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-fluo-400"
-        style={{
-          background: `linear-gradient(90deg, #22ccff ${pct}%, rgba(255,255,255,0.10) ${pct}%)`,
-        }}
-      />
-      {hint && <p className="mt-1.5 text-xs text-mist-soft/70">{hint}</p>}
-    </div>
-  );
-}
-
 export default function DiagnosticForm() {
   const [step, setStep] = useState(0);
   const [a, setA] = useState<Answers>(empty);
-  const [status, setStatus] = useState<"form" | "loading" | "done" | "error">("form");
+  const [status, setStatus] = useState<
+    "form" | "loading" | "building" | "done" | "error"
+  >("form");
   const [error, setError] = useState("");
 
   const set = (patch: Partial<Answers>) => setA((prev) => ({ ...prev, ...patch }));
 
-  const toggleDept = (id: DeptId) =>
-    setA((prev) => ({
-      ...prev,
-      departments: prev.departments.includes(id)
-        ? prev.departments.filter((d) => d !== id)
-        : [...prev.departments, id],
-    }));
+  const toggle = (key: "departments" | "timeSinks", val: string) =>
+    setA((prev) => {
+      const arr = prev[key] as string[];
+      return {
+        ...prev,
+        [key]: arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val],
+      };
+    });
 
-  const toggleSink = (label: string) =>
-    setA((prev) => ({
-      ...prev,
-      timeSinks: prev.timeSinks.includes(label)
-        ? prev.timeSinks.filter((d) => d !== label)
-        : [...prev.timeSinks, label],
-    }));
-
-  // Aperçu en direct des économies (montré à l'étape des heures).
-  const preview = useMemo(() => {
-    const input: DiagnosticInput = {
-      sector: a.sector,
-      teamSize: a.teamSize,
-      departments: a.departments,
-      timeSinks: a.timeSinks,
-      hoursPerWeek: a.hoursPerWeek,
-      hourlyRate: a.hourlyRate,
-      aiLevel: a.aiLevel,
-      aiTool: a.aiTool,
-    };
-    return runDiagnostic(input);
-  }, [a]);
+  const team = useMemo(
+    () => DEPARTMENTS.filter((d) => a.departments.includes(d.id)),
+    [a.departments]
+  );
+  const totalTasks = useMemo(
+    () => team.reduce((s, d) => s + Math.min(4, d.tasks.length), 0),
+    [team]
+  );
 
   const canNext =
     (step === 0 && a.sector.trim().length > 1) ||
-    (step === 1 && Boolean(a.teamSize)) ||
-    (step === 2 && a.departments.length > 0) ||
-    (step === 3 && a.timeSinks.length > 0) ||
-    step === 4 ||
-    (step === 5 && Boolean(a.aiLevel) && Boolean(a.aiTool)) ||
-    step === 6;
+    (step === 1 && a.departments.length > 0) ||
+    (step === 2 && a.timeSinks.length >= 2) ||
+    (step === 3 && Boolean(a.buildMode)) ||
+    step === 4;
 
   async function submit() {
     if (!a.name || !a.email || !a.consent) {
@@ -176,195 +124,116 @@ export default function DiagnosticForm() {
     setStatus("loading");
     setError("");
 
-    const deptNames = a.departments
-      .map((id) => DEPARTMENTS.find((d) => d.id === id)?.name)
-      .filter(Boolean)
-      .join(", ");
-
+    const teamNames = team.map((d) => d.name);
     try {
       const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          interest: "workforce-ia",
           name: a.name,
           email: a.email,
           phone: a.phone,
           company: a.sector,
           sector: a.sector,
-          teamSize: a.teamSize,
+          departments: teamNames.join(", "),
           timeSinks: a.timeSinks.join(", "),
-          departments: deptNames,
-          hoursPerWeek: a.hoursPerWeek,
-          hourlyRate: a.hourlyRate,
-          aiLevel: a.aiLevel,
-          aiTool: a.aiTool,
+          buildMode: a.buildMode,
           consent: a.consent,
           diagnostic: {
-            reclaimWeeklyHours: preview.reclaimWeeklyHours,
-            reclaimAnnualHours: preview.reclaimAnnualHours,
-            annualSavings: preview.annualSavings,
-            fteEquivalent: preview.fteEquivalent,
-            leadScore: preview.leadScore,
-            temperature: preview.temperature,
-            priorities: preview.priorities.map((p) => p.name),
+            teamRoster: teamNames,
+            buildMode: a.buildMode,
+            tasksAutomated: totalTasks,
           },
         }),
       });
       const json = await res.json();
       if (!res.ok || !json.stored) throw new Error(json.error ?? "Erreur");
-      setStatus("done");
-      if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      setStatus("building");
+      window.setTimeout(() => {
+        setStatus("done");
+        if (typeof window !== "undefined")
+          window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 1900);
     } catch (err) {
       setStatus("error");
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
     }
   }
 
+  // ---------------------------------------------------------------- CONSTRUCTION
+  if (status === "building") {
+    return (
+      <div className="card flex flex-col items-center gap-6 py-16 text-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-2 border-white/15 border-t-fluo-400" />
+        <div className="space-y-2">
+          {LOADING_LINES.map((l, i) => (
+            <p
+              key={l}
+              className="animate-pulse text-sm text-mist-soft"
+              style={{ animationDelay: `${i * 0.25}s` }}
+            >
+              {l}
+            </p>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // ------------------------------------------------------------------ RÉSULTAT
   if (status === "done") {
-    const r = preview;
-    const maxWeekly = Math.max(1, ...r.priorities.map((p) => p.weeklyHours));
+    const modeLabel =
+      a.buildMode === "avec-nous"
+        ? "on la construit avec toi"
+        : "on la construit pour toi, clé en main";
     return (
       <div className="rise space-y-6">
-        {/* Bandeau chiffres clés */}
-        <div className="card overflow-hidden p-6 sm:p-8">
+        {/* Le cerveau */}
+        <div className="card p-5 sm:p-8">
           <div className="text-center">
-            <span className="text-xs font-600 uppercase tracking-widest text-fluo-300">
-              Ton diagnostic IA{a.sector ? ` · ${a.sector}` : ""}
+            <span className="inline-flex items-center gap-2 rounded-md border border-fluo-400/25 bg-fluo-500/[0.07] px-4 py-1.5 text-xs font-600 uppercase tracking-widest text-fluo-300">
+              Ton cerveau IA{a.sector ? ` · ${a.sector}` : ""}
             </span>
-            <h2 className="mx-auto mt-3 max-w-xl font-display text-2xl font-800 text-white sm:text-3xl">
-              {r.headline}
+            <h2 className="mx-auto mt-4 max-w-xl font-display text-2xl font-800 text-white sm:text-3xl">
+              Voici l&apos;équipe qu&apos;on va construire pour toi.
             </h2>
-            <p className="mx-auto mt-3 max-w-lg text-mist-soft">{r.verdict}</p>
+            <p className="mx-auto mt-3 max-w-lg text-mist-soft">
+              {team.length} employé{team.length > 1 ? "s" : ""} IA · {totalTasks} tâches prêtes à être
+              exécutées 24/7. Chaque point est une tâche qu&apos;ils prennent en charge.
+            </p>
           </div>
 
-          <div className="mt-7 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-md border border-white/10 bg-white/[0.02] p-5 text-center">
-              <p className="font-display text-3xl font-800 text-white sm:text-4xl">
-                {fmtInt(r.reclaimWeeklyHours)}
-                <span className="ml-1 text-base font-500 text-mist-soft">h</span>
-              </p>
-              <p className="mt-1 text-xs text-mist-soft">récupérables / semaine</p>
-            </div>
-            <div className="rounded-md border border-fluo-400/25 bg-fluo-500/[0.06] p-5 text-center">
-              <p className="font-display text-3xl font-800 text-white sm:text-4xl">
-                {fmtInt(r.annualSavings)}&nbsp;$
-              </p>
-              <p className="mt-1 text-xs text-fluo-300">économisés / année</p>
-            </div>
-            <div className="rounded-md border border-white/10 bg-white/[0.02] p-5 text-center">
-              <p className="font-display text-3xl font-800 text-white sm:text-4xl">
-                {fmtInt(r.reclaimAnnualHours)}
-                <span className="ml-1 text-base font-500 text-mist-soft">h</span>
-              </p>
-              <p className="mt-1 text-xs text-mist-soft">soit ≈ {r.fteEquivalent} poste temps plein / an</p>
-            </div>
+          <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-ink-900/40">
+            <BrainBuild depts={team.map((d) => ({ short: d.short, icon: d.icon, tasks: d.tasks }))} />
           </div>
-          <p className="mt-4 text-center text-xs text-mist-soft/60">
-            Estimation basée sur tes réponses (≈ 60 % des tâches répétitives automatisables, 48 semaines/an).
-          </p>
         </div>
 
-        {/* Priorités : les 3 employés IA */}
+        {/* Détail des tâches par employé */}
         <div className="card p-6 sm:p-8">
           <h3 className="font-display text-xl font-800 text-white">
-            Tes 3 employés IA prioritaires
+            Tout ce que ton équipe IA va faire
           </h3>
-          <p className="mt-1 text-sm text-mist-soft">
-            Classés selon ce qui te fait perdre le plus de temps. On installe le n°1 en premier.
-          </p>
-
-          <div className="mt-6 space-y-4">
-            {r.priorities.map((p, i) => (
-              <div
-                key={p.id}
-                className="rounded-lg border border-white/10 bg-white/[0.02] p-5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-fluo-500/15 text-lg">
-                      {p.icon}
-                    </span>
-                    <div>
-                      <h4 className="font-display text-lg font-700 text-white">
-                        <span className="mr-1.5 text-fluo-300">#{i + 1}</span>
-                        {p.name}
-                      </h4>
-                      <p className="text-sm text-mist-soft">{p.tagline}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-display text-lg font-700 text-fluo-300">
-                      ~{p.weeklyHours}h / sem
-                    </p>
-                    <p className="text-xs text-mist-soft">
-                      ≈ {fmtInt(p.annualSavings)}&nbsp;$ / an
-                    </p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {team.map((d) => (
+              <div key={d.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-5">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-fluo-500/15 text-xl">
+                    {d.icon}
+                  </span>
+                  <div>
+                    <h4 className="font-display text-base font-700 text-white">{d.short}</h4>
+                    <p className="text-xs text-fluo-300">{d.name}</p>
                   </div>
                 </div>
-
-                {/* barre de gain */}
-                <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/8">
-                  <div
-                    className="h-full rounded-full bg-fluo-400"
-                    style={{
-                      width: `${Math.max(8, (p.weeklyHours / maxWeekly) * 100)}%`,
-                      animation: "meter 0.9s cubic-bezier(0.22,1,0.36,1) both",
-                    }}
-                  />
-                </div>
-
-                <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {p.tasks.map((t) => (
+                <ul className="mt-3 space-y-1.5">
+                  {d.tasks.map((t) => (
                     <li key={t} className="flex items-start gap-2 text-sm text-white/90">
                       <span className="mt-1.5 inline-block h-1.5 w-1.5 flex-none bg-fluo-400" />
                       {t}
                     </li>
                   ))}
                 </ul>
-
-                <p className="mt-4 rounded-md border border-fluo-400/20 bg-fluo-500/[0.05] px-4 py-2.5 text-sm text-white/90">
-                  <span className="font-600 text-fluo-300">On commence par :</span> {p.quickWin}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Plan 90 jours */}
-        <div className="card p-6 sm:p-8">
-          <h3 className="font-display text-xl font-800 text-white">
-            Ton plan d&apos;implantation
-          </h3>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            {[
-              {
-                t: "7 jours",
-                h: "Le premier employé IA en place",
-                d: `On installe ton ${r.priorities[0].name.toLowerCase()} et on branche tes outils actuels.`,
-              },
-              {
-                t: "30 jours",
-                h: "La routine tourne toute seule",
-                d: "Tes suivis, rapports et réponses partent sans toi. On ajuste sur tes vrais cas.",
-              },
-              {
-                t: "90 jours",
-                h: "Une équipe IA complète",
-                d: "On empile tes 3 priorités. Le temps récupéré est réinvesti dans la croissance.",
-              },
-            ].map((ph, i) => (
-              <div
-                key={ph.t}
-                className="relative rounded-lg border border-white/10 bg-white/[0.02] p-5"
-              >
-                <span className="text-xs font-700 uppercase tracking-widest text-fluo-300">
-                  Phase {i + 1} · {ph.t}
-                </span>
-                <h4 className="mt-2 font-display text-base font-700 text-white">{ph.h}</h4>
-                <p className="mt-1.5 text-sm text-mist-soft">{ph.d}</p>
               </div>
             ))}
           </div>
@@ -373,11 +242,11 @@ export default function DiagnosticForm() {
         {/* CTA */}
         <div className="card p-6 text-center sm:p-10">
           <h3 className="font-display text-2xl font-800 text-white sm:text-3xl">
-            On l&apos;installe pour vrai ?
+            On la construit ?
           </h3>
           <p className="mx-auto mt-3 max-w-lg text-mist-soft">
-            15 minutes pour valider ton diagnostic et te dire exactement par quoi commencer. Sans
-            engagement.
+            Tu as choisi qu&apos;{modeLabel}. 15 minutes pour valider ton cerveau IA et te dire par
+            quel employé on commence. Sans engagement.
           </p>
           <a
             href={CALENDLY_URL}
@@ -388,7 +257,7 @@ export default function DiagnosticForm() {
             Réserver mon appel gratuit
           </a>
           <p className="mt-3 text-xs text-mist-soft/70">
-            On construit tes systèmes prioritaires en 7 jours, directement dans ton entreprise.
+            Ton équipe IA installée et testée en 7 jours, directement dans ton entreprise.
           </p>
         </div>
       </div>
@@ -401,7 +270,6 @@ export default function DiagnosticForm() {
 
   return (
     <div className="card p-6 sm:p-8">
-      {/* progression */}
       <div className="mb-2 flex items-center justify-between text-xs text-mist-soft">
         <span>
           Étape {step + 1} / {STEPS}
@@ -423,7 +291,9 @@ export default function DiagnosticForm() {
         {step === 0 && (
           <div>
             <p className="font-display text-xl font-700 text-white">Tu fais quoi, au juste ?</p>
-            <p className="mt-1 text-sm text-mist-soft">Ton secteur ou ton type d&apos;entreprise.</p>
+            <p className="mt-1 text-sm text-mist-soft">
+              Ton secteur — pour bâtir un cerveau IA qui te ressemble.
+            </p>
             <input
               autoFocus
               value={a.sector}
@@ -436,11 +306,18 @@ export default function DiagnosticForm() {
 
         {step === 1 && (
           <div>
-            <p className="font-display text-xl font-700 text-white">Vous êtes combien ?</p>
+            <p className="font-display text-xl font-700 text-white">
+              Quels employés IA veux-tu ?
+            </p>
+            <p className="mt-1 text-sm text-mist-soft">Choisis ceux qui te parlent.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {TEAM_SIZES.map((s) => (
-                <Chip key={s} active={a.teamSize === s} onClick={() => set({ teamSize: s })}>
-                  {s}
+              {DEPARTMENTS.map((d) => (
+                <Chip
+                  key={d.id}
+                  active={a.departments.includes(d.id)}
+                  onClick={() => toggle("departments", d.id)}
+                >
+                  {d.icon} {d.short}
                 </Chip>
               ))}
             </div>
@@ -450,116 +327,62 @@ export default function DiagnosticForm() {
         {step === 2 && (
           <div>
             <p className="font-display text-xl font-700 text-white">
-              Quels employés IA t&apos;intéressent le plus ?
+              Qu&apos;est-ce qui te fait perdre le plus de temps ?
             </p>
-            <p className="mt-1 text-sm text-mist-soft">Choisis ceux qui te parlent.</p>
+            <p className="mt-1 text-sm text-mist-soft">Choisis-en au moins 2.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {DEPARTMENTS.map((d) => (
+              {TIME_SINKS.map((t) => (
                 <Chip
-                  key={d.id}
-                  active={a.departments.includes(d.id)}
-                  onClick={() => toggleDept(d.id)}
+                  key={t.label}
+                  active={a.timeSinks.includes(t.label)}
+                  onClick={() => toggle("timeSinks", t.label)}
                 >
-                  {d.icon} {d.name.replace(" IA", "")}
+                  {t.label}
                 </Chip>
               ))}
             </div>
+            {a.timeSinks.length === 1 && (
+              <p className="mt-3 text-xs text-fluo-300/80">Encore un pour continuer.</p>
+            )}
           </div>
         )}
 
         {step === 3 && (
           <div>
             <p className="font-display text-xl font-700 text-white">
-              Qu&apos;est-ce qui te fait perdre le plus de temps ?
+              Comment veux-tu qu&apos;on la construise ?
             </p>
-            <p className="mt-1 text-sm text-mist-soft">Choisis-en autant que tu veux.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {TIME_SINKS.map((t) => (
-                <Chip
-                  key={t.label}
-                  active={a.timeSinks.includes(t.label)}
-                  onClick={() => toggleSink(t.label)}
+            <p className="mt-1 text-sm text-mist-soft">Deux façons de faire — à toi de choisir.</p>
+            <div className="mt-4 grid gap-3">
+              {BUILD_MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => set({ buildMode: m.id })}
+                  className={`rounded-xl border p-4 text-left transition-colors ${
+                    a.buildMode === m.id
+                      ? "border-fluo-400 bg-fluo-500/10"
+                      : "border-white/12 hover:border-white/30"
+                  }`}
                 >
-                  {t.label}
-                </Chip>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">{m.icon}</span>
+                    <span className="font-display text-base font-700 text-white">{m.title}</span>
+                  </div>
+                  <p className="mt-1.5 text-sm text-mist-soft">{m.desc}</p>
+                </button>
               ))}
             </div>
           </div>
         )}
 
         {step === 4 && (
-          <div className="space-y-7">
-            <div>
-              <p className="font-display text-xl font-700 text-white">
-                Combien de temps ça vous gruge ?
-              </p>
-              <p className="mt-1 text-sm text-mist-soft">
-                Une estimation, à l&apos;échelle de ton équipe. Ça sert à chiffrer ton gain.
-              </p>
-            </div>
-            <Slider
-              label="Heures / semaine sur ces tâches répétitives"
-              value={a.hoursPerWeek}
-              min={2}
-              max={60}
-              step={1}
-              suffix="h"
-              onChange={(v) => set({ hoursPerWeek: v })}
-            />
-            <Slider
-              label="Coût horaire moyen de ces heures"
-              value={a.hourlyRate}
-              min={20}
-              max={120}
-              step={5}
-              suffix="$/h"
-              hint="Salaire chargé de la personne qui fait ces tâches (ou le tien)."
-              onChange={(v) => set({ hourlyRate: v })}
-            />
-            <div className="rounded-md border border-fluo-400/20 bg-fluo-500/[0.05] px-4 py-3 text-center text-sm text-mist-soft">
-              Ça représente déjà{" "}
-              <span className="font-700 text-white">
-                {fmtInt(a.hoursPerWeek * a.hourlyRate * 48)} $
-              </span>{" "}
-              de travail répétitif par année.
-            </div>
-          </div>
-        )}
-
-        {step === 5 && (
-          <div className="space-y-6">
-            <div>
-              <p className="font-display text-xl font-700 text-white">Ton niveau avec l&apos;IA ?</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {AI_LEVELS.map((l) => (
-                  <Chip key={l} active={a.aiLevel === l} onClick={() => set({ aiLevel: l })}>
-                    {l}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="font-display text-xl font-700 text-white">
-                Quelle IA tu utilises le plus souvent ?
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {AI_TOOLS.map((t) => (
-                  <Chip key={t} active={a.aiTool === t} onClick={() => set({ aiTool: t })}>
-                    {t}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 6 && (
           <div>
             <p className="font-display text-xl font-700 text-white">
-              Où on t&apos;envoie ton diagnostic complet ?
+              Laisse ton courriel — on te montre ton cerveau IA.
             </p>
             <p className="mt-1 text-sm text-mist-soft">
-              Tu le vois à l&apos;écran juste après, et on t&apos;en garde une copie.
+              Il apparaît à l&apos;écran juste après, et on t&apos;en garde une copie.
             </p>
             <div className="mt-4 grid gap-3">
               <input
@@ -589,7 +412,7 @@ export default function DiagnosticForm() {
                   onChange={(e) => set({ consent: e.target.checked })}
                   className="mt-0.5 h-4 w-4 flex-none accent-fluo-500"
                 />
-                <span>J&apos;accepte d&apos;être contacté par Le Cloud AI au sujet de mon diagnostic.</span>
+                <span>J&apos;accepte d&apos;être contacté par Le Cloud AI au sujet de mon équipe IA.</span>
               </label>
             </div>
           </div>
@@ -602,7 +425,6 @@ export default function DiagnosticForm() {
         </p>
       )}
 
-      {/* navigation */}
       <div className="mt-6 flex items-center justify-between gap-3">
         {step > 0 ? (
           <button
@@ -632,7 +454,7 @@ export default function DiagnosticForm() {
             onClick={submit}
             className="rounded-full bg-fluo-500 px-6 py-3 font-display font-800 text-ink-950 transition-colors hover:bg-fluo-400 disabled:opacity-60 glow-fluo"
           >
-            {status === "loading" ? "Analyse en cours…" : "Voir mon diagnostic"}
+            {status === "loading" ? "Construction…" : "Construire mon cerveau IA"}
           </button>
         )}
       </div>
