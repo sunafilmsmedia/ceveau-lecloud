@@ -39,10 +39,10 @@ export default function Home() {
               Construis une équipe IA qui <span className="accent">t&apos;appartient</span> vraiment.
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-mist-soft">
-              Plus de 14 000 entreprises ont déjà cartographié la leur. En médiane, elles ont trouvé{" "}
-              <span className="font-700 text-white">100 000 $ par année</span> de travail à confier à
-              des agents. Laisse ton courriel et choisis comment on construit la tienne : par nous, ou
-              avec nous.
+              En moyenne, une entreprise peut économiser{" "}
+              <span className="font-700 text-white">50 000 $ par année</span> en optimisant ses
+              opérations avec l&apos;IA. Laisse ton courriel et choisis comment on construit la
+              tienne : par nous, ou avec nous.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-mist-soft">
               <span className="flex items-center gap-2">
