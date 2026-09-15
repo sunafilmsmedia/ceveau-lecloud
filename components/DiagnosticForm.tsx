@@ -5,13 +5,10 @@ import { CALENDLY_URL } from "@/lib/site";
 import { DEPARTMENTS, DeptId, TIME_SINKS } from "@/lib/diagnostic";
 import BrainBuild from "./BrainBuild";
 
-type BuildMode = "par-nous" | "avec-nous";
-
 type Answers = {
   sector: string;
   departments: DeptId[];
   timeSinks: string[];
-  buildMode: BuildMode | "";
   name: string;
   email: string;
   phone: string;
@@ -22,34 +19,13 @@ const empty: Answers = {
   sector: "",
   departments: [],
   timeSinks: [],
-  buildMode: "",
   name: "",
   email: "",
   phone: "",
   consent: false,
 };
 
-const STEPS = 5;
-
-const BUILD_MODES: {
-  id: BuildMode;
-  icon: string;
-  title: string;
-  desc: string;
-}[] = [
-  {
-    id: "par-nous",
-    icon: "🔧",
-    title: "Par vous — clé en main",
-    desc: "Vous construisez et installez toute mon équipe IA. Je n'ai qu'à l'utiliser.",
-  },
-  {
-    id: "avec-nous",
-    icon: "🤝",
-    title: "Avec vous — on apprend",
-    desc: "Vous nous formez et on la construit ensemble, pour qu'on soit autonomes ensuite.",
-  },
-];
+const STEPS = 4;
 
 const LOADING_LINES = [
   "Lecture de ton entreprise…",
@@ -113,8 +89,7 @@ export default function DiagnosticForm() {
     (step === 0 && a.sector.trim().length > 1) ||
     (step === 1 && a.departments.length > 0) ||
     (step === 2 && a.timeSinks.length >= 2) ||
-    (step === 3 && Boolean(a.buildMode)) ||
-    step === 4;
+    step === 3;
 
   async function submit() {
     if (!a.name || !a.email || !a.consent) {
@@ -138,11 +113,9 @@ export default function DiagnosticForm() {
           sector: a.sector,
           departments: teamNames.join(", "),
           timeSinks: a.timeSinks.join(", "),
-          buildMode: a.buildMode,
           consent: a.consent,
           diagnostic: {
             teamRoster: teamNames,
-            buildMode: a.buildMode,
             tasksAutomated: totalTasks,
           },
         }),
@@ -183,10 +156,6 @@ export default function DiagnosticForm() {
 
   // ------------------------------------------------------------------ RÉSULTAT
   if (status === "done") {
-    const modeLabel =
-      a.buildMode === "avec-nous"
-        ? "on la construit avec toi"
-        : "on la construit pour toi, clé en main";
     return (
       <div className="rise space-y-6">
         {/* Le cerveau */}
@@ -245,8 +214,8 @@ export default function DiagnosticForm() {
             On la construit ?
           </h3>
           <p className="mx-auto mt-3 max-w-lg text-mist-soft">
-            Tu as choisi qu&apos;{modeLabel}. 15 minutes pour valider ton cerveau IA et te dire par
-            quel employé on commence. Sans engagement.
+            On la construit pour toi, clé en main. 15 minutes pour valider ton cerveau IA et te dire
+            par quel employé on commence. Sans engagement.
           </p>
           <a
             href={CALENDLY_URL}
@@ -348,35 +317,6 @@ export default function DiagnosticForm() {
         )}
 
         {step === 3 && (
-          <div>
-            <p className="font-display text-xl font-700 text-white">
-              Comment veux-tu qu&apos;on la construise ?
-            </p>
-            <p className="mt-1 text-sm text-mist-soft">Deux façons de faire — à toi de choisir.</p>
-            <div className="mt-4 grid gap-3">
-              {BUILD_MODES.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => set({ buildMode: m.id })}
-                  className={`rounded-xl border p-4 text-left transition-colors ${
-                    a.buildMode === m.id
-                      ? "border-fluo-400 bg-fluo-500/10"
-                      : "border-white/12 hover:border-white/30"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl">{m.icon}</span>
-                    <span className="font-display text-base font-700 text-white">{m.title}</span>
-                  </div>
-                  <p className="mt-1.5 text-sm text-mist-soft">{m.desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
           <div>
             <p className="font-display text-xl font-700 text-white">
               Laisse ton courriel — on te montre ton cerveau IA.

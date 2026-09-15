@@ -41,8 +41,8 @@ export default function Home() {
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-mist-soft">
               En moyenne, une entreprise peut économiser{" "}
               <span className="font-700 text-white">50 000 $ par année</span> en optimisant ses
-              opérations avec l&apos;IA. Laisse ton courriel et choisis comment on construit la
-              tienne : par nous, ou avec nous.
+              opérations avec l&apos;IA. Laisse ton courriel — on te montre ton cerveau IA et on le
+              construit pour toi, clé en main.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-mist-soft">
               <span className="flex items-center gap-2">
